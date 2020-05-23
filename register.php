@@ -5,6 +5,16 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
     $password=$_POST["pass"];
     $passwordconfirm=$_POST["passconfirm"];
     $file=$_POST["file"];
+
+    include_once("connection_database.php");
+    if (!empty($email) && !empty($password)) {
+        $sql = "INSERT INTO users (image, email, password) VALUES (?, ?, ?);";
+        $stmt= $dbh->prepare($sql);
+        $stmt->execute([$file, $email, $password]);
+
+        header("Location: index.php");
+        exit();
+    }
 }
 ?>
 <!doctype html>
