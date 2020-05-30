@@ -1,14 +1,15 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $uploaddir = $_SERVER['DOCUMENT_ROOT'].'/images/';
-    $imagefile = $_FILES['image']['name'];
+    //$imagefile = $_FILES['image']['name'];
     $name =$_POST["name"];
     $surname =$_POST["surname"];
     $phone =$_POST["phone"];
     $email = $_POST["email"];
     $password = $_POST["pass"];
     $passwordconfirm = $_POST["passconfirm"];
-    $file = $imagefile;
+    $file_name= uniqid().'.jpg';
+    $file=$uploaddir.$file_name;
     include_once("conection_database.php");
     if(mb_strlen($password)<6 || mb_strlen($password)>20) {
         header("Location: register.php");
@@ -17,8 +18,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       if (!empty($email) && !empty("$password") && $password == $passwordconfirm && !empty($name) && !empty($surname) && !empty($phone)) {
         $sql = "INSERT INTO `users` (`image`, `name`, `surname`, `phone`, `email`, `password`) VALUES (?, ?, ?, ?, ?, ?);";
         $stmt = $dbh->prepare($sql);
-        $stmt->execute([$file, $name, $surname, $phone, $email, md5($password)]);
-        move_uploaded_file($_FILES['image']['tmp_name'], "$uploaddir" . $_FILES['image']['name']);
+        $stmt->execute([$file_name, $name, $surname, $phone, $email, md5($password)]);
+        move_uploaded_file($_FILES['image']['tmp_name'], $file);
         header("Location: index.php");
         exit();
     }
