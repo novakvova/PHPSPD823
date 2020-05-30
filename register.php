@@ -1,6 +1,6 @@
 <?php
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $uploaddir = '/xampp/htdocs/images/';
+    $uploaddir = $_SERVER['DOCUMENT_ROOT'].'/images/';
     $imagefile = $_FILES['image']['name'];
     $name =$_POST["name"];
     $surname =$_POST["surname"];
