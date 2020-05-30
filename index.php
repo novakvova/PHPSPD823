@@ -1,3 +1,4 @@
+<?php include_once("conection_database.php"); ?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -11,7 +12,11 @@
 <body>
 <?php
 include_once("navbar.php");
-include_once("conection_database.php");
+
+
+echo "<h1>".DB_CHARSET."</h1>";
+echo "<h1>DB_CHARSET</h1>";
+echo "<h1>DB_CHARSET</h1>";
 ?>
 <div class="container">
     <h1>Головна сторінка</h1>
