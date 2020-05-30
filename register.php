@@ -1,28 +1,44 @@
 <?php
+$error = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $uploaddir = $_SERVER['DOCUMENT_ROOT'].'/images/';
+    $uploaddir = $_SERVER['DOCUMENT_ROOT'] . '/images/';
     //$imagefile = $_FILES['image']['name'];
-    $name =$_POST["name"];
-    $surname =$_POST["surname"];
-    $phone =$_POST["phone"];
+    $name = $_POST["name"];
+    $surname = $_POST["surname"];
+    $phone = $_POST["phone"];
     $email = $_POST["email"];
     $password = $_POST["pass"];
     $passwordconfirm = $_POST["passconfirm"];
-    $file_name= uniqid().'.jpg';
-    $file=$uploaddir.$file_name;
+    $file_name = uniqid() . '.jpg';
+    $file = $uploaddir . $file_name;
     include_once("conection_database.php");
-    if(mb_strlen($password)<6 || mb_strlen($password)>20) {
-        header("Location: register.php");
-        exit();
+    if (mb_strlen($password) < 6 || mb_strlen($password) > 20) {
+        $error = "Вкажіть пароль мін 6 символів";
     }
-      if (!empty($email) && !empty("$password") && $password == $passwordconfirm && !empty($name) && !empty($surname) && !empty($phone)) {
+
+    if (empty($email) || empty("$password") || $password != $passwordconfirm ||
+        empty($name) || empty($surname) || empty($phone)) {
+        $error = "Вкажіть значення у полях";
+    }
+    if (empty($error)) {
         $sql = "INSERT INTO `users` (`image`, `name`, `surname`, `phone`, `email`, `password`) VALUES (?, ?, ?, ?, ?, ?);";
         $stmt = $dbh->prepare($sql);
         $stmt->execute([$file_name, $name, $surname, $phone, $email, md5($password)]);
-        move_uploaded_file($_FILES['image']['tmp_name'], $file);
+        $data=$_POST["imgBase64"];
+        list($type, $data) = explode(';', $data);
+        list(, $data)      = explode(',', $data);
+        $data = base64_decode($data);
+
+        file_put_contents($file, $data);
+
+        ///move_uploaded_file($_FILES['image']['tmp_name'], $file);
         header("Location: index.php");
         exit();
     }
+} else {
+    $name = "";
+    $surname = "";
+    $phone = "";
 }
 ?>
 <!doctype html>
@@ -33,6 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <?php include_once("styles.php") ?>
+    <link rel="stylesheet" href="node_modules/cropperjs/dist/cropper.min.css">
     <link rel="stylesheet" href="register.css">
     <title>Бомба - пітарда</title>
 </head>
@@ -46,46 +63,55 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="card-body">
                     <h5 class="card-title text-center">Реєстрація</h5>
+                    <?php if (!empty($error)) { ?>
+                        <div>
+                            <div class="alert alert-danger" role="alert">
+                                <?= $error ?>
+                            </div>
+                        </div>
+                    <?php } ?>
                     <form name="registration" class="form-signin" method="post" enctype="multipart/form-data" action="">
                         <div class="form-label-group">
                             <input name="name" type="text" id="name" class="form-control"
-                                   placeholder="Ім'я" required>
+                                   placeholder="Ім'я" value="<?= $name ?>">
                             <label for="name">Ім'я</label>
                         </div>
                         <div class="form-label-group">
                             <input name="surname" type="text" id="surname" class="form-control"
-                                   placeholder="Прізвище" required>
+                                   placeholder="Прізвище">
                             <label for="surname">Прізвище</label>
                         </div>
                         <div class="form-label-group">
                             <input name="phone" type="text" id="phone" class="form-control"
-                                   placeholder="Телефон" required>
+                                   placeholder="Телефон">
                             <label for="phone">Телефон</label>
                         </div>
                         <div class="form-label-group">
                             <input name="email" type="email" id="inputEmail" class="form-control"
-                                   placeholder="Електронна пошта" required>
+                                   placeholder="Електронна пошта">
                             <label for="inputEmail">Електронна пошта</label>
                         </div>
                         <hr>
                         <div class="form-label-group">
                             <input name="pass" type="password" id="inputPassword" class="form-control"
-                                   placeholder="Пароль" required>
+                                   placeholder="Пароль">
                             <label for="inputPassword">Пароль</label>
                         </div>
                         <div class="form-label-group">
                             <input name="passconfirm" type="password" id="inputConfirmPassword" class="form-control"
-                                   placeholder="Підтвердження пароля" required>
+                                   placeholder="Підтвердження пароля">
                             <label for="inputConfirmPassword">Підтвердження пароля</label>
                         </div>
 
                         <div class="form-label-group">
-                            <div class="custom-file">
-                                <input name="image" type="file" class="custom-file-input" id="inputGroupFile04">
-                                <label class="custom-file-label" for="inputGroupFile04">Вибрати файл</label>
-                            </div>
+                            <img src="images/noimage.jpg" id="select_file"
+                                 class="btn rounded-circle mx-auto d-block"
+                                 width="200px" alt="noimage">
+                            <input type="file" id="input_file" style="display: none;"/>
+                            <input type="hidden" id="imgBase64" name="imgBase64" />
                         </div>
-                        <button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Зареєструватись</button>
+                        <button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Зареєструватись
+                        </button>
                         <a class="d-block text-center mt-2 small" href="login.php">Увійти</a>
                         <hr class="my-4">
                         <button class="btn btn-lg btn-google btn-block text-uppercase" type="submit"><i
@@ -100,6 +126,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 </div>
+
+<?php include_once("cropper-modal.php"); ?>
+
 <?php include_once("scripts.php") ?>
+<script src="node_modules/cropperjs/dist/cropper.min.js"></script>
+<script>
+    $(function () {
+
+        //скритий інпут для вибора файла
+        $input_file = $("#input_file");
+        //фото по якому клікаємо для вибору файла
+        $select_file = $("#select_file");
+
+        //модалка для вибору файла
+        $dialogCropper=$("#cropperModal");
+
+        //при клікові по фото - робимо клік по інпуту для вибору файла
+        $select_file.on("click", function () {
+            $input_file.click();
+        });
+
+        //якщо користувач вибрав файл на ПК
+        $input_file.on("change", function() {
+            if (this.files && this.files.length) {
+                //Беремо перший файл, який обрав користувач
+                let file = this.files[0];
+                var reader = new FileReader();
+                //коли завершили читання файлу, відобраємо діалогове вікно для кропера і змінюємо фото у кропері
+                reader.onload = function(e) {
+                    $dialogCropper.modal('show');
+                    cropper.replace(e.target.result);
+
+                }
+                //Починаємо зчитувати файл, який обрав користувач
+                reader.readAsDataURL(file);
+
+            }
+        });
+        //Фото (тег img) у діалоговому вікні із яким працює кропер
+        const imgPreview = document.getElementById('preview-img');
+        //Налаштування кроперра
+        const cropper = new Cropper(imgPreview, {
+            aspectRatio: 1/1,
+            viewMode: 1,
+            autoCropArea: 0.5,
+            crop(event) {
+                // console.log(event.detail.x);
+                // console.log(event.detail.y);
+                // console.log(event.detail.width);
+                // console.log(event.detail.height);
+                // console.log(event.detail.rotate);
+                // console.log(event.detail.scaleX);
+                // console.log(event.detail.scaleY);
+            },
+        });
+
+        //клікнули на кнопку повернути фото
+        $("#img-rotation").on("click",function (e) {
+            e.preventDefault();
+            cropper.rotate(45);
+        });
+
+        //Натиснули кнопку обрізати фото
+        $("#cropImg").on("click", function (e) {
+            e.preventDefault();
+            //Отримали фото із кропера
+            var imgContent = cropper.getCroppedCanvas().toDataURL();
+            //відобразили фото на формі
+            $select_file.attr("src", imgContent);
+            $("#imgBase64").val(imgContent);
+            //скриваємо діалогове вікно
+            $dialogCropper.modal('hide');
+        });
+
+
+
+    });
+</script>
 </body>
 </html>
