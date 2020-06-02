@@ -155,15 +155,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 var reader = new FileReader();
                 //коли завершили читання файлу, відобраємо діалогове вікно для кропера і змінюємо фото у кропері
                 reader.onload = function(e) {
-                    $dialogCropper.modal('show');
-                    cropper.replace(e.target.result);
-
+                    let image = new Image();
+                    image.src = e.target.result;
+                    image.onload=function () {
+                        if (image.height < 300 && image.width < 300) {
+                            alert("Ваше фото має розмір " + image.width + " x " + image.height + ", а повино бути більше за 300 пікселів");
+                            return false;
+                        }
+                        $dialogCropper.modal('show');
+                        cropper.replace(e.target.result);
+                    }
                 }
                 //Починаємо зчитувати файл, який обрав користувач
                 reader.readAsDataURL(file);
-
             }
         });
+
         //Фото (тег img) у діалоговому вікні із яким працює кропер
         const imgPreview = document.getElementById('preview-img');
         //Налаштування кроперра
@@ -180,6 +187,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // console.log(event.detail.scaleX);
                 // console.log(event.detail.scaleY);
             },
+           // if(cropper.width()<300 || cropper.height()<300)
+           //  alert("Фото повино бути більше за 300 пікселів");
         });
 
         //клікнули на кнопку повернути фото
@@ -198,6 +207,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $("#imgBase64").val(imgContent);
             //скриваємо діалогове вікно
             $dialogCropper.modal('hide');
+        });
+
+        //клікнули на кнопку Відмінити
+        $("#cropCancel").on("click",function (e) {
+            e.preventDefault();
+            cropper.reset();
         });
 
 
